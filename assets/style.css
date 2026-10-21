@@ -289,3 +289,16 @@ dialog.pm[open]{animation:pmIn .4s var(--ease)}
 .tile__st{right:auto!important;left:calc(56% - 48px);top:56px!important;width:clamp(64px,7vw,96px)!important;z-index:2}
 .tile > div:last-child{position:relative;z-index:1}
 @media(max-width:860px){.tile{min-height:400px}.tile__photo{top:76px;right:20px;width:52%}.tile__st{left:auto!important;right:calc(52% - 10px);top:60px!important;width:64px!important}}
+
+/* ===== плитки программ: отдельные цвета под пару к палитре школы ===== */
+:root{
+  --t-k:linear-gradient(150deg,#FFE79A 0%,#FDD453 32%,#FCC41C 66%,#EBA90A 100%);
+  --t-p:linear-gradient(150deg,#FFB49A 0%,#FF8A6B 32%,#F2674A 66%,#D04A33 100%);
+  --t-m:linear-gradient(150deg,#8EEBD6 0%,#3FCDB0 32%,#20AE95 66%,#138A77 100%);
+  --t-s:linear-gradient(150deg,#2D5486 0%,#163C6B 34%,#0A2C55 70%,#061D3B 100%);
+}
+.tile[data-k=kindergarten]{--g:var(--t-k);--edge:#B98400}
+.tile[data-k=primary]{--g:var(--t-p);--edge:#A8361F}
+.tile[data-k=middle]{--g:var(--t-m);--edge:#0D6B5C}
+.tile[data-k=senior]{--g:var(--t-s);--edge:#041428}
+.scene--k{background:var(--t-k)}.scene--p{background:var(--t-p)}.scene--m{background:var(--t-m)}.scene--s{background:var(--t-s)}
