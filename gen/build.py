@@ -47,10 +47,10 @@ def h2(title, em='', cls='h2'):
     return f'<h2 class="{cls}" data-split>{t}</h2>'
 
 
-def ft(items, cls=''):
-    """Плитки-факты: иконка, жирная короткая строка, пояснение мелко."""
-    lis = ''.join(f'<li class="rv">{I(ic, "sq")}<b>{e(b)}</b>{("<span>" + e(d) + "</span>") if d else ""}</li>' for ic, b, d in items)
-    return f'<ul class="ft{(" " + cls) if cls else ""}">{lis}</ul>'
+def sl(items, cls=''):
+    """Спокойный список: иконка в цвет главы, жирная строка, пояснение под ней. Без коробок."""
+    lis = ''.join(f'<li>{I(ic)}<p><b>{e(b)}</b>{("<span>" + e(d) + "</span>") if d else ""}</p></li>' for ic, b, d in items)
+    return f'<ul class="sl rv{(" " + cls) if cls else ""}">{lis}</ul>'
 
 
 def more(label='Подробнее', tag='span', attrs='', cls=''):
@@ -170,7 +170,7 @@ def concept():
     stats = ''.join(
         f'<div class="stat rv"><b{" data-count=" + chr(34) + re.sub(r"[^0-9]", "", n) + chr(34) if cnt else ""}>{e(n)}</b><span>{e(l)}</span></div>'
         for n, l, cnt in c['stats'])
-    groups = ''.join(f'<div class="feat__g"><h3 class="feat__t">{e(title)}</h3>{ft(items)}</div>' for title, items in c['groups'])
+    groups = ''.join(f'<div class="feat__g"><h3 class="feat__t">{e(title)}</h3>{sl(items)}</div>' for title, items in c['groups'])
     body = f'''  <div class="wrap">
     <div class="split">
       <div class="sh">{kicker('01', 'Концепция')}{h2(c['title'], c['title_em'])}<p class="lead rv">{e(c['lead'])}</p></div>
@@ -249,7 +249,7 @@ def food():
     f = FOOD
     body = f'''  <div class="wrap">
     <div class="split split--food">
-      <div class="sh">{kicker('04', 'Питание')}{h2(f['title'], f['title_em'])}<p class="lead rv">{e(f['lead'])}</p>{ft(f['items'], 'ft--2')}</div>
+      <div class="sh">{kicker('04', 'Питание')}{h2(f['title'], f['title_em'])}<p class="lead rv">{e(f['lead'])}</p>{sl(f['items'])}</div>
       <figure class="frame frame--tilt rv" data-par="-0.04"><img src="assets/img/food.jpg" alt="Дети выбирают еду на шведском столе" loading="lazy"></figure>
     </div>
   </div>'''
@@ -279,7 +279,7 @@ def safety():
     <div class="sh">{kicker('06', 'Безопасность')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
     <div class="split split--safety">
       <figure class="frame rv">{video('terr_walk', '', 'Прогулка по территории школы: башня с воротами, парковые дорожки, детская площадка')}<figcaption class="badge"><b>{e(s['area'][0])}</b>{e(s['area'][1])}</figcaption></figure>
-      {ft(s['items'], 'ft--2')}
+      {sl(s['items'])}
     </div>
   </div>'''
     return section('safety', 'deep', 'Безопасность', '06', body)
@@ -316,7 +316,7 @@ def transfer():
     (i1, n1, s1), (i2, n2, s2) = t['route']
     body = f'''  <div class="wrap">
     <div class="split split--transfer">
-      <div class="sh">{kicker('08', 'Трансфер')}{h2(t['title'], t['title_em'])}<p class="lead rv">{e(t['lead'])}</p>{ft(t['items'], 'ft--row')}</div>
+      <div class="sh">{kicker('08', 'Трансфер')}{h2(t['title'], t['title_em'])}<p class="lead rv">{e(t['lead'])}</p>{sl(t['items'])}</div>
       <figure class="frame frame--tilt rv"><img src="assets/img/bus.jpg" alt="Микроавтобус школьного трансфера на дорожке у парка" loading="lazy"></figure>
     </div>
     <div class="route rv" data-route aria-hidden="true">
@@ -338,7 +338,7 @@ def summer():
       <div class="sh">{kicker('09', 'Летний клуб')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
       <figure class="frame frame--round rv">{video('summer_yard', '', 'Летний клуб во дворе школы: рисунки мелками и танцы')}</figure>
     </div>
-    {ft(s['facts'], 'ft--3')}
+    {sl(s['facts'], 'sl--3')}
     <div class="eps">{eps}</div>
     {more('Смотреть фото и видео лета', 'button', ' data-album="summer"', 'more--pill rv')}
   </div>'''
@@ -363,18 +363,23 @@ def reviews():
 
 def admission():
     a = ADMISSION
-    keys = ft(a['cards'], 'ft--big')
-    inc = ft([(ic, t, '') for ic, t in a['included']], 'ft--row ft--4')
+    steps = ''.join(f'<li><span class="path__n">{i + 1}</span><p><b>{e(t)}</b>{e(d)}</p></li>' for i, (t, d) in enumerate(a['steps']))
+    inc = ''.join(f'<li>{I("check")}{e(t)}</li>' for t in a['included'])
+    lbl, head, sub = a['cost']
     body = f'''  <div class="wrap">
     <div class="sh">{kicker('11', 'Поступление')}{h2(a['title'], a['title_em'])}</div>
-    {keys}
-    <div class="inc">
-      <h3 class="feat__t">Что входит в стоимость</h3>
-      {inc}
-    </div>
-    <div class="adm__cta rv">
-      <a class="pill pill--sun" href="#signup">Прийти на пробные дни {I('arrow-right')}</a>
-      <a class="doclink" href="#docs" data-open="docs">{I('file-badge', 'sq')}<span><b>Лицензия и документы</b><small>госаккредитация, холдинг Mirapolis</small></span>{more()}</a>
+    <div class="adm">
+      <ol class="path rv">{steps}</ol>
+      <article class="price rv">
+        <p class="price__lbl">{e(lbl)}</p>
+        <h3 class="price__h">{e(head)}</h3>
+        <p class="price__sub">{e(sub)}</p>
+        <p class="price__lbl price__lbl--inc">Уже входит в стоимость</p>
+        <ul class="price__inc">{inc}</ul>
+        <p class="price__sale">{I('badge-percent')}<span><b>{e(a['sale'][0])}</b>{e(a['sale'][1])}</span></p>
+        <a class="pill pill--blue price__go" href="#signup">Прийти на пробные дни {I('arrow-right')}</a>
+      </article>
+      <a class="doclink rv" href="#docs" data-open="docs">{I('file-badge')}<span><b>Лицензия и документы</b><small>госаккредитация, холдинг Mirapolis</small></span>{more()}</a>
     </div>
   </div>'''
     return section('admission', 'evening', 'Поступление', '11', body)
@@ -504,7 +509,7 @@ def program_dialog(p, prev, nxt):
     choice = f'<p class="sub"><span class="tag">{L["choice"]}</span>по желанию</p>' + dl(p['author_choice'])
     ind = dl(p['individual'])
     day = ''.join(f'<li><time>{e(t)}</time><span>{e(w)}</span></li>' for t, w in p['day'])
-    food = ft(FOOD['items'], 'ft--2 ft--light')
+    food = sl(FOOD['items'])
     toc = [(f'{k}-base', L['base']), (f'{k}-author', 'Авторская программа'), (f'{k}-ind', L['individual']), (f'{k}-day', p['day_title']), (f'{k}-food', 'Питание')]
     toc_h = ''.join(f'<a href="#{a}" data-jump><b>0{i + 1}</b>{e(t)}</a>' for i, (a, t) in enumerate(toc))
     return f'''<dialog class="pm" id="m-{k}" data-k="{k}" aria-labelledby="t-{k}">

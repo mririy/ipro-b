@@ -127,38 +127,16 @@ dialog:focus,dialog:focus-visible{outline:none}
 .more:hover,a:hover > .more,button:hover > .more,a:hover .more{gap:12px}
 .more--pill{padding:14px 20px 14px 22px;font-size:16px;box-shadow:0 10px 24px rgba(10,44,85,.18)}
 
-/* плитки-факты: иконка, короткая жирная строка, пояснение мелко */
-.ft{display:grid;grid-template-columns:repeat(var(--ftc,3),minmax(0,1fr));gap:12px}
-.ft--2{--ftc:2}.ft--3{--ftc:3}.ft--4{--ftc:4}
-.ft li{display:grid;align-content:start;gap:10px;padding:18px 18px 20px;border-radius:22px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);min-width:0}
-.ft b{font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
-.ft span{font-size:14px;line-height:1.35;color:var(--muted);margin-top:-4px}
-.ft .i.sq{width:42px;height:42px;padding:10px;border-radius:14px}
-.ft--row{--ftc:1}
-.ft--row li{grid-template-columns:42px minmax(0,1fr);column-gap:14px;row-gap:2px;align-items:center;padding:14px 16px}
-.ft--row li .i.sq{grid-row:span 2}
-.ft--row span{margin-top:0}
-.ft--row.ft--4{--ftc:4}
-.ft--big li{padding:24px 24px 26px;gap:12px}
-.ft--big b{font-size:clamp(22px,2vw,28px);letter-spacing:-.035em;line-height:1.1}
-.ft--big span{font-size:15.5px;margin-top:0}
-.ft--big .i.sq{width:48px;height:48px;padding:11px;border-radius:16px}
-.ft--light li{background:#fff;box-shadow:0 10px 24px rgba(10,44,85,.05)}
-@media (max-width:900px){.ft--3,.ft--4,.ft--row.ft--4{--ftc:2}.ft--big{--ftc:1}
-  .ft--big li{grid-template-columns:48px minmax(0,1fr);column-gap:16px;row-gap:4px;align-items:start;padding:18px}
-  .ft--big li .i.sq{grid-row:span 2}}
-@media (max-width:600px){
-  .ft{gap:10px}
-  .ft li{padding:14px 14px 16px;border-radius:18px;gap:8px}
-  .ft b{font-size:15.5px}
-  .ft span{font-size:13px}
-  .ft .i.sq{width:38px;height:38px;padding:9px;border-radius:12px}
-  .ft:not(.ft--row):not(.ft--big) > li:last-child:nth-child(odd){grid-column:1/-1}
-  .ft--row li{grid-template-columns:38px minmax(0,1fr);column-gap:12px;padding:12px}
-  .ft--row.ft--4 b{font-size:14.5px}
-  .ft--big b{font-size:21px}
-  .ft--big span{font-size:14px}
-}
+/* спокойный список: иконка в цвет главы, жирная строка, пояснение под ней — без коробок */
+.sl{display:grid;grid-template-columns:repeat(var(--slc,1),minmax(0,1fr));column-gap:clamp(24px,4vw,56px);border-top:1px solid var(--line)}
+.sl li{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:14px;align-items:start;padding:13px 0 14px;border-bottom:1px solid var(--line)}
+.sl .i{width:24px;height:24px;margin-top:1px;color:var(--accent);stroke-width:2}
+.sl p{min-width:0}
+.sl b{display:block;font-size:17px;font-weight:750;letter-spacing:-.015em;line-height:1.3}
+.sl span{display:block;font-size:14.5px;line-height:1.35;color:var(--muted);margin-top:2px}
+.sl--3{--slc:3}
+@media (max-width:900px){.sl--3{--slc:1}}
+@media (max-width:600px){.sl li{padding:12px 0 13px;column-gap:12px}.sl b{font-size:16px}.sl span{font-size:14px}}
 .feat__t{font-size:var(--t-h3);font-weight:800;letter-spacing:-.03em;line-height:1.1}
 
 /* горизонтальные ленты: свайп вниз по карточкам не застревает, тени не обрезаются */
@@ -294,7 +272,6 @@ html.modal-open{overflow:hidden}
 @media (max-width:860px){.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0;padding-left:0}.stat:nth-child(n+3){border-top:1px solid var(--line)}}
 .feat{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,3vw,40px)}
 .feat__g{display:grid;gap:16px;align-content:start}
-.feat .ft{--ftc:2}
 @media (max-width:900px){.feat{grid-template-columns:1fr}}
 
 /* =====================================================================
@@ -543,20 +520,55 @@ html.modal-open{overflow:hidden}
 /* =====================================================================
    11 · ПОСТУПЛЕНИЕ
    ===================================================================== */
-.inc{display:grid;gap:16px}
-.adm__cta{display:flex;flex-wrap:wrap;align-items:center;gap:16px 20px}
-.doclink{display:inline-flex;align-items:center;gap:14px;padding:12px 12px 12px 14px;border-radius:24px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);text-decoration:none;color:var(--fg)}
+.adm{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);grid-template-rows:auto 1fr;grid-template-areas:"path price" "docs price";column-gap:clamp(28px,5vw,72px);row-gap:clamp(24px,4vh,40px);align-items:start}
+.adm > .path{grid-area:path}
+.adm > .price{grid-area:price}
+.adm > .doclink{grid-area:docs;align-self:end}
+/* путь к зачислению: цифры на линии */
+.path{display:grid;counter-reset:p}
+.path li{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr);column-gap:18px;padding-bottom:26px}
+.path li:last-child{padding-bottom:0}
+.path li:not(:last-child)::before{content:"";position:absolute;left:23px;top:50px;bottom:4px;width:2px;border-radius:2px;background:color-mix(in srgb,var(--fg) 22%,transparent)}
+.path__n{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--sun);color:var(--navy);font-size:20px;font-weight:900;box-shadow:0 0 0 6px color-mix(in srgb,var(--sun) 20%,transparent)}
+.path p{padding-top:2px;color:var(--muted);font-size:16px;line-height:1.4}
+.path b{display:block;color:var(--fg);font-size:clamp(20px,1.8vw,24px);font-weight:800;letter-spacing:-.03em;line-height:1.2;margin-bottom:3px}
+/* карточка стоимости — как тариф: цена, что входит, скидки, кнопка */
+.price{display:grid;gap:12px;padding:clamp(22px,3vw,36px);border-radius:var(--r-xl);background:#fff;color:var(--ink);box-shadow:0 26px 60px rgba(4,14,30,.35)}
+.price__lbl{font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-d)}
+.price__lbl--inc{margin-top:14px;padding-top:20px;border-top:1px solid rgba(10,44,85,.1)}
+.price__h{font-size:clamp(26px,2.6vw,36px);font-weight:800;letter-spacing:-.045em;line-height:1.05}
+.price__sub{color:var(--ink-2)}
+.price__inc{display:grid;grid-template-columns:1fr 1fr;column-gap:24px}
+.price__inc li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;align-items:center;padding:9px 0;font-weight:650;font-size:16px;line-height:1.3}
+.price__inc .i{width:24px;height:24px;padding:5px;border-radius:50%;background:#E3F0FB;color:var(--blue-d);stroke-width:3}
+.price__sale{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;align-items:center;margin-top:10px;padding:14px 16px;border-radius:20px;background:#FFF5D1;color:var(--ink)}
+.price__sale .i{width:40px;height:40px;padding:8px;border-radius:13px;background:var(--sun);color:var(--navy)}
+.price__sale b{display:block;font-weight:800;font-size:17px;color:var(--ink)}
+.price__sale span{color:var(--ink-2);font-size:14.5px}
+.price__go{justify-self:start;margin-top:8px}
+/* документы — одной строкой */
+.doclink{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:14px;padding-top:20px;border-top:1px solid var(--line);text-decoration:none;color:var(--fg)}
+.doclink > .i{width:24px;height:24px;color:var(--accent)}
 .doclink > span:not(.more){display:grid;gap:2px;min-width:0}
 .doclink b{font-weight:800}
 .doclink small{font-size:13.5px;color:var(--muted)}
-.doclink .i.sq{width:42px;height:42px;padding:10px;border-radius:14px}
-.doclink .more{margin-left:auto;padding:8px 13px 8px 15px;font-size:14px}
+.doclink .more{padding:8px 13px 8px 15px;font-size:14px}
+@media (max-width:900px){.adm{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"path" "price" "docs"}}
+@media (max-width:600px){
+  .price__inc{grid-template-columns:minmax(0,1fr)}
+  .price__inc li{padding:8px 0;font-size:15.5px}
+  .price__go{justify-self:stretch}
+  .path li{grid-template-columns:42px minmax(0,1fr);column-gap:14px;padding-bottom:22px}
+  .path__n{width:42px;height:42px;font-size:18px}
+  .path li:not(:last-child)::before{left:20px;top:46px}
+  .doclink{grid-template-columns:24px minmax(0,1fr)}
+  .doclink .more{grid-column:2;justify-self:start}
+}
 .docs__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .docs__list li{display:grid;grid-template-columns:46px 1fr;gap:14px;align-items:start}
 .docs__list b{display:block;font-weight:800;line-height:1.25}
 .docs__list span{color:var(--muted);font-size:15px}
 .docs__list--col{grid-template-columns:1fr}
-@media (max-width:600px){.adm__cta{display:grid}.adm__cta .pill{justify-self:start}.doclink{width:100%}}
 
 /* ---------- вопросы и ответы ---------- */
 .split--faq{align-items:start}
@@ -814,7 +826,7 @@ html.a11y .seq{height:auto}
 html.a11y .seq__stage{position:relative;height:auto;padding-block:40px}
 html.a11y .seq__frame canvas{display:none}
 html.a11y .seq__poster{opacity:1 !important}
-html.a11y .ft li,html.a11y .dirc,html.a11y .alb,html.a11y .doclink,html.a11y .qa,html.a11y .news__card,html.a11y .guest,html.a11y .ep{box-shadow:inset 0 0 0 2px #000 !important;background:#fff !important;color:#000 !important}
+html.a11y .price,html.a11y .dirc,html.a11y .alb,html.a11y .qa,html.a11y .news__card,html.a11y .guest,html.a11y .ep{box-shadow:inset 0 0 0 2px #000 !important;background:#fff !important;color:#000 !important}
 html.a11y .news__card.is-pin{background:#fff !important;color:#000 !important}
 html.a11y .news__card.is-pin p,html.a11y .news__card.is-pin .news__meta,html.a11y .news__card.is-pin .news__more{color:#000 !important}
 html.a11y a{text-decoration:underline}
