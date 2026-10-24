@@ -49,7 +49,10 @@ def h2(title, em='', cls='h2'):
 
 def sl(items, cls=''):
     """Спокойный список: иконка в цвет главы, жирная строка, пояснение под ней. Без коробок."""
-    lis = ''.join(f'<li>{I(ic)}<p><b>{e(b)}</b>{("<span>" + e(d) + "</span>") if d else ""}</p></li>' for ic, b, d in items)
+    lis = ''
+    for it in items:
+        ic, b, d = (it + ('',))[:3]
+        lis += f'<li>{I(ic)}<p><b>{e(b)}</b>{("<span>" + e(d) + "</span>") if d else ""}</p></li>'
     return f'<ul class="sl rv{(" " + cls) if cls else ""}">{lis}</ul>'
 
 
@@ -139,7 +142,7 @@ def intro():
   </div>
   <div class="wrap intro__in">
     <img class="intro__mark up" src="assets/img/wordmark-aipro.webp" width="1200" height="942" alt="Ай Про">
-    <p class="kicker up"><span>00</span>{e(INTRO['eyebrow'])}</p>
+    <p class="kicker up">{e(INTRO['eyebrow'])}</p>
     <h1 class="h1">{h.strip()}</h1>
   </div>
   <a class="cue" href="#news">Листайте{I('arrow-down')}</a>'''
@@ -150,7 +153,7 @@ def news():
     cards = ''.join(news_card(n) for n in NEWS_SEED)
     data = json.dumps(NEWS_SEED, ensure_ascii=False)
     body = f'''  <div class="wrap news">
-    <div class="news__head">{kicker('', 'Актуально')}<h2 class="h3">Новости и объявления</h2></div>
+    <div class="news__head"><h2 class="h3">Новости и объявления</h2></div>
     <div class="news__list hs" id="newsList">{cards}</div>
   </div>
   <script type="application/json" id="newsSeed">{data}</script>'''
@@ -173,7 +176,7 @@ def concept():
     groups = ''.join(f'<div class="feat__g"><h3 class="feat__t">{e(title)}</h3>{sl(items)}</div>' for title, items in c['groups'])
     body = f'''  <div class="wrap">
     <div class="split">
-      <div class="sh">{kicker('01', 'Концепция')}{h2(c['title'], c['title_em'])}<p class="lead rv">{e(c['lead'])}</p></div>
+      <div class="sh">{h2(c['title'], c['title_em'])}<p class="lead rv">{e(c['lead'])}</p></div>
       <div class="stack rv" aria-hidden="true">
         <div class="stack__a" data-par="-0.05"><img src="assets/img/facade.jpg" alt="" loading="lazy"></div>
         <div class="stack__b" data-par="0.07"><img src="assets/img/paint.jpg" alt="" loading="lazy"></div>
@@ -192,7 +195,7 @@ def about():
     body = f'''  <div class="seq seq--estate" data-seq="estate" data-frames="61" data-path="assets/seq/estate" data-ext="webp">
     <div class="seq__stage">
       <div class="wrap seq__grid">
-        <div class="sh seq__txt">{kicker('02', 'О школе')}{h2(a['title'], a['title_em'])}<p class="seq__cap">{I('sparkles')}{e(a['seq_label'])}</p></div>
+        <div class="sh seq__txt">{h2(a['title'], a['title_em'])}</div>
         <div class="seq__frame"><canvas aria-hidden="true"></canvas><img class="seq__poster" src="assets/seq/estate/f_000.webp" alt="3D-макет особняка школы"></div>
       </div>
       <div class="seq__progress" aria-hidden="true"><i></i></div>
@@ -214,14 +217,19 @@ def sun_arc(pos, moon=False):
     return f'<div class="arc" data-arc="{pos}" aria-hidden="true"><svg viewBox="0 0 220 120"><path d="M10 112 A100 100 0 0 1 210 112" /></svg><span class="arc__arm"><span class="arc__sun">{ico}</span></span></div>'
 
 
+def act_top(a, moon=False):
+    arc = sun_arc(1 if moon else a['sun'], moon) if (moon or a.get('sun') is not None) else ''
+    tm = f'<p class="act__time">{e(a["time"])}</p>' if a.get('time') else ''
+    return f'<div class="act__top">{arc}{tm}</div>' if (arc or tm) else ''
+
+
 def act(key, cls=''):
     a = ACTS[key]
-    top = f'<div class="act__top">{sun_arc(a["sun"])}<p class="act__time">{e(a["time"])}</p></div>\n    ' if a['time'] else ''
     body = f'''  <div class="act__plate" style="background-image:url(assets/img/plates/{a['plate']}.jpg)" aria-hidden="true"></div>
   <div class="wrap act__in">
     <span class="act__num" aria-hidden="true">{a['num']}</span>
-    {top}<h2 class="act__name" data-split>{e(a['name'])}</h2>
-    <p class="act__note rv">{e(a['note'])}</p>
+    {act_top(a)}
+    <h2 class="act__name" data-split>{e(a['name'])}</h2>
   </div>'''
     pal = {'morning': 'sky', 'after': 'amber', 'evening': 'twilight'}[key]
     title = f"{a['time']} · {a['name']}" if a['time'] else a['name']
@@ -239,7 +247,7 @@ def programs():
       {more()}
     </a>'''
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('03', 'Программы')}{h2(P['title'], P['title_em'])}<p class="lead rv">{e(P['lead'])}</p></div>
+    <div class="sh">{h2(P['title'], P['title_em'])}{('<p class="lead rv">' + e(P['lead']) + '</p>') if P['lead'] else ''}</div>
     <div class="tiles">{tiles}</div>
   </div>'''
     return section('programs', 'paper', 'Программы и расписание', '03', body)
@@ -249,7 +257,7 @@ def food():
     f = FOOD
     body = f'''  <div class="wrap">
     <div class="split split--food">
-      <div class="sh">{kicker('04', 'Питание')}{h2(f['title'], f['title_em'])}<p class="lead rv">{e(f['lead'])}</p>{sl(f['items'])}</div>
+      <div class="sh">{h2(f['title'], f['title_em'])}{sl(f['items'])}</div>
       <figure class="frame frame--tilt rv" data-par="-0.04"><img src="assets/img/food.jpg" alt="Дети выбирают еду на шведском столе" loading="lazy"></figure>
     </div>
   </div>'''
@@ -263,11 +271,10 @@ def teachers():
     body = f'''  <div class="wrap">
     <div class="actline">
       <span class="act__num act__num--sm" aria-hidden="true">{a['num']}</span>
-      <div class="act__top">{sun_arc(a['sun'])}<p class="act__time">{e(a['time'])}</p></div>
+      {act_top(a)}
       <h2 class="act__name act__name--sm" data-split>{e(a['name'])}</h2>
-      <p class="act__note rv">{e(a['note'])}</p>
     </div>
-    <div class="sh">{kicker('05', 'Педагоги')}<h3 class="h2 h2--sm" data-split>{e(t['title'])} <em>{e(t['title_em'])}</em></h3></div>
+    <div class="sh"><h3 class="h2 h2--sm" data-split>{e(t['title'])} <em>{e(t['title_em'])}</em></h3></div>
     <div class="people">{cards}</div>
   </div>'''
     return section('teachers', 'blue', 'Педагоги', '05', body)
@@ -276,7 +283,7 @@ def teachers():
 def safety():
     s = SAFETY
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('06', 'Безопасность')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
+    <div class="sh">{h2(s['title'], s['title_em'])}</div>
     <div class="split split--safety">
       <figure class="frame rv">{video('terr_walk', '', 'Прогулка по территории школы: башня с воротами, парковые дорожки, детская площадка')}<figcaption class="badge"><b>{e(s['area'][0])}</b>{e(s['area'][1])}</figcaption></figure>
       {sl(s['items'])}
@@ -301,7 +308,7 @@ def extra():
     </article>'''
     guests = ''.join(f'<article class="guest rv"><span class="guest__mono" aria-hidden="true">{e(n[0])}</span><div><b>{e(n)}</b><span class="guest__what">{e(w)}</span><p>{e(c)}</p></div></article>' for n, w, c in x['guests'])
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('07', 'Авторская программа')}{h2(x['title'], x['title_em'])}<p class="lead rv">{e(x['lead'])}</p></div>
+    <div class="sh">{h2(x['title'], x['title_em'])}<p class="lead rv">{e(x['lead'])}</p></div>
     <div class="dirs">{dirs}</div>
     <div class="meet">
       <div class="sh sh--sm"><h3 class="h2 h2--sm" data-split>{e(x['meet_title'])}</h3><p class="lead rv">{e(x['meet_lead'])}</p></div>
@@ -313,16 +320,16 @@ def extra():
 
 def transfer():
     t = TRANSFER
-    (i1, n1, s1), (i2, n2, s2) = t['route']
+    (i1, n1), (i2, n2) = t['route']
     body = f'''  <div class="wrap">
     <div class="split split--transfer">
-      <div class="sh">{kicker('08', 'Трансфер')}{h2(t['title'], t['title_em'])}<p class="lead rv">{e(t['lead'])}</p>{sl(t['items'])}</div>
+      <div class="sh">{h2(t['title'], t['title_em'])}<p class="lead rv">{e(t['lead'])}</p>{sl(t['items'])}</div>
       <figure class="frame frame--tilt rv"><img src="assets/img/bus.jpg" alt="Микроавтобус школьного трансфера на дорожке у парка" loading="lazy"></figure>
     </div>
     <div class="route rv" data-route aria-hidden="true">
       <svg viewBox="0 0 1000 160" preserveAspectRatio="none"><path class="route__line" d="M40 120 C 220 120, 260 40, 420 50 S 640 140, 780 90 S 920 40, 960 40"/><path class="route__done" d="M40 120 C 220 120, 260 40, 420 50 S 640 140, 780 90 S 920 40, 960 40"/></svg>
-      <span class="route__pt route__pt--a">{I(i1)}<b>{e(n1)}</b><small>{e(s1)}</small></span>
-      <span class="route__pt route__pt--b">{I(i2)}<b>{e(n2)}</b><small>{e(s2)}</small></span>
+      <span class="route__pt route__pt--a">{I(i1)}<b>{e(n1)}</b></span>
+      <span class="route__pt route__pt--b">{I(i2)}<b>{e(n2)}</b></span>
       <span class="route__bus">{I('bus')}</span>
     </div>
   </div>'''
@@ -335,10 +342,10 @@ def summer():
       <div class="ep__txt"><p class="ep__k">{e(mon)}</p><h3>{e(title)}</h3><p>{text}</p></div></article>''' for n, mon, title, text, img, alt in s['episodes'])
     body = f'''  <div class="wrap">
     <div class="split split--summer">
-      <div class="sh">{kicker('09', 'Летний клуб')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
+      <div class="sh">{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
       <figure class="frame frame--round rv">{video('summer_yard', '', 'Летний клуб во дворе школы: рисунки мелками и танцы')}</figure>
     </div>
-    {sl(s['facts'], 'sl--3')}
+    <ul class="meta rv">{''.join(f'<li>{I(ic)}{e(t)}</li>' for ic, t in s['facts'])}</ul>
     <div class="eps">{eps}</div>
     {more('Смотреть фото и видео лета', 'button', ' data-album="summer"', 'more--pill rv')}
   </div>'''
@@ -351,11 +358,11 @@ def reviews():
     stars = ''.join(I('star', 'st') for _ in range(5))
     lead = f'<p class="lead rv">{e(r["lead"])}</p>' if r.get('lead') else ''
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('10', 'Отзывы')}{h2(r['title'], r['title_em'])}{lead}</div>
+    <div class="sh">{h2(r['title'], r['title_em'])}{lead}</div>
     <a class="rating rv" href="{CONTACTS['map']}" target="_blank" rel="noopener"><b>{r['rating']}</b><span class="rating__st">{stars}</span><span class="rating__t">из 5 на Яндекс Картах<span class="more">Все отзывы{I('arrow-up-right')}</span></span></a>
     <div class="carousel rv">
       <div class="carousel__track hs" tabindex="0" aria-label="Отзывы родителей">{cards}</div>
-      <div class="carousel__nav"><button type="button" data-dir="-1" aria-label="Предыдущий отзыв">{I('arrow-left')}</button><button type="button" data-dir="1" aria-label="Следующий отзыв">{I('arrow-right')}</button><span class="carousel__hint">Листайте отзывы</span></div>
+      <div class="carousel__nav"><button type="button" data-dir="-1" aria-label="Предыдущий отзыв">{I('arrow-left')}</button><button type="button" data-dir="1" aria-label="Следующий отзыв">{I('arrow-right')}</button></div>
     </div>
   </div>'''
     return section('reviews', 'twilight', 'Отзывы', '10', body)
@@ -367,7 +374,7 @@ def admission():
     inc = ''.join(f'<li>{I("check")}{e(t)}</li>' for t in a['included'])
     lbl, head, sub = a['cost']
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('11', 'Поступление')}{h2(a['title'], a['title_em'])}</div>
+    <div class="sh">{h2(a['title'], a['title_em'])}</div>
     <div class="adm">
       <ol class="path rv">{steps}</ol>
       <article class="price rv">
@@ -385,16 +392,7 @@ def admission():
     return section('admission', 'evening', 'Поступление', '11', body)
 
 
-def faq():
-    items = ''.join(f'<details class="qa"{" open" if i == 0 else ""}><summary>{e(q)}<span class="qa__pm" aria-hidden="true">{I("plus")}</span></summary><p>{a}</p></details>' for i, (q, a) in enumerate(FAQ))
-    body = f'''  <div class="wrap">
-    <div class="split split--faq">
-      <div class="sh">{kicker('', 'Вопросы и ответы')}{h2('Отвечаем на главные вопросы', 'родителей')}
-        <button class="pill pill--white faq__ask" type="button" data-open="helper">{I('message-circle-question-mark')} Спросить помощника</button></div>
-      <div class="qas rv">{items}</div>
-    </div>
-  </div>'''
-    return section('faq', 'evening', 'Вопросы и ответы', '', body)
+
 
 
 def plural_media(n):
@@ -411,7 +409,7 @@ def gallery():
       {more('Смотреть')}
     </button>'''
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('', 'Галерея')}{h2('Фото и видео', 'школы')}</div>
+    <div class="sh">{h2('Фото и видео', 'школы')}</div>
     <div class="albs">{cards}</div>
   </div>'''
     return section('gallery', 'evening2', 'Галерея', '', body)
@@ -424,9 +422,8 @@ def night():
       <div class="wrap seq__grid">
         <div class="seq__txt">
           <span class="act__num" aria-hidden="true">{a['num']}</span>
-          <div class="act__top">{sun_arc(1, moon=True)}<p class="act__time">{e(a['time'])}</p></div>
+          {act_top(a, moon=True)}
           <h2 class="act__name" data-split>{e(a['name'])}</h2>
-          <p class="act__note">{e(a['note'])}</p>
         </div>
         <div class="seq__frame"><canvas aria-hidden="true"></canvas><img class="seq__poster" src="assets/seq/night/f_000.webp" alt="Особняк школы вечером, в окнах горит свет"></div>
       </div>
@@ -438,18 +435,15 @@ def night():
 def signup():
     s = SIGNUP
     c = CONTACTS
-    steps = ''.join(f'<li class="rv"><span>{i + 1}</span><b>{e(t)}</b>{e(d)}</li>' for i, (t, d) in enumerate(s['steps']))
     body = f'''  <div class="wrap">
     <div class="split split--signup">
-      <div class="sh">{kicker('', 'Запись')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p>
-        <p class="label">Что дальше</p><ol class="steps">{steps}</ol></div>
+      <div class="sh">{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
       <div class="formcard rv">
         <form class="form" id="signupForm" novalidate data-endpoint="">
-          <h3>Записаться на пробные дни</h3>
           <label class="field" for="f-name"><span>Имя <i>*</i></span><input id="f-name" name="name" autocomplete="name" placeholder="Как вас зовут" required><small class="field__err">Напишите имя, чтобы мы знали, к кому обращаться.</small></label>
           <label class="field" for="f-age"><span>Возраст ребёнка</span><input id="f-age" name="age" inputmode="numeric" placeholder="Например, 8"></label>
           <label class="field" for="f-phone"><span>Телефон <i>*</i></span><input id="f-phone" name="phone" type="tel" autocomplete="tel" placeholder="+7 (978) 000-00-00" required><small class="field__err">Введите номер телефона, чтобы мы могли перезвонить.</small></label>
-          <button class="pill pill--blue form__go" type="submit">Записаться на пробные дни {I('arrow-right')}</button>
+          <button class="pill pill--blue form__go" type="submit">Записаться {I('arrow-right')}</button>
           <p class="form__note">{e(s['note'])}</p>
         </form>
         <div class="sent" id="signupSent" hidden tabindex="-1">
@@ -474,7 +468,7 @@ def signup():
 def footer():
     c = CONTACTS
     return f'''<footer class="foot">
-      <div class="foot__brand"><img src="assets/img/wordmark-aipro.webp" width="1200" height="942" alt="Ай Про"><p>Частная школа полного дня в Ялте для детей 4–18 лет.</p></div>
+      <div class="foot__brand"><img src="assets/img/wordmark-aipro.webp" width="1200" height="942" alt="Ай Про"><p>Частная школа полного дня в Ялте для детей 4–18 лет</p></div>
       <div class="foot__contacts">
         <a class="foot__phone" href="{c['phone_href']}">{e(c['phone'])}</a><span>{e(c['hours'])}</span>
         <a href="mailto:{c['email']}">{e(c['email'])}</a>
@@ -486,16 +480,16 @@ def footer():
           <a href="{c['max']}" target="_blank" rel="noopener" aria-label="MAX"><b class="sb">M</b></a>
         </div>
       </div>
-      <nav class="foot__nav" aria-label="Разделы">
-        <div><p>Обучение</p><a href="#programs" data-go="programs">Программы</a><a href="#extra" data-go="extra">Кружки</a><a href="#summer" data-go="summer">Летний клуб</a></div>
-        <div><p>О школе</p><a href="#concept" data-go="concept">О школе</a><a href="#safety" data-go="safety">Безопасность</a><a href="#admission" data-go="admission">Поступление и оплата</a></div>
-        <div><p>Информация</p><a href="#docs" data-open="docs">Сведения об образовательной организации</a><a href="#gallery" data-go="gallery">Галерея</a><button type="button" class="a11y-toggle a11y-toggle--link" aria-pressed="false">{I('eye')}Версия для слабовидящих</button></div>
-      </nav>
       <div class="foot__map">
         <iframe title="Ай Про на Яндекс Картах" src="about:blank" data-src="{c['map_embed']}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         <a class="foot__maplink" href="{c['map']}" target="_blank" rel="noopener">{I('map-pin')}Открыть на Яндекс Картах</a>
       </div>
-      <div class="foot__bottom"><span>© 2026 Школа АЙПРО · IPROSCHOOL</span><a href="#top" data-go="top">Наверх {I('arrow-up')}</a></div>
+      <div class="foot__bottom">
+        <span>© 2026 Школа АЙПРО · IPROSCHOOL</span>
+        <a href="#docs" data-open="docs">Сведения об образовательной организации</a>
+        <button type="button" class="a11y-toggle a11y-toggle--link" aria-pressed="false">{I('eye')}Версия для слабовидящих</button>
+        <a href="#top" data-go="top">Наверх {I('arrow-up')}</a>
+      </div>
     </footer>'''
 
 
@@ -505,12 +499,11 @@ def program_dialog(p, prev, nxt):
     L = LABELS
     base = ''.join(f'<li class="{"hl" if len(b) > 2 and b[2] else ""}">{I("sparkles" if len(b) > 2 and b[2] else "check")}<span><b>{e(b[0])}</b>{("<small>" + e(b[1]) + "</small>") if len(b) > 1 and b[1] else ""}</span></li>' for b in p['base'])
     dl = lambda xs, cls='': f'<ul class="dl2{(" " + cls) if cls else ""}">' + ''.join(f'<li>{e(x)}</li>' for x in xs) + '</ul>'
-    req = (f'<p class="sub"><span class="tag tag--fill">{L["required"]}</span>входит в расписание</p>' + dl(p['author_required'], 'dl2--fill')) if p['author_required'] else ''
-    choice = f'<p class="sub"><span class="tag">{L["choice"]}</span>по желанию</p>' + dl(p['author_choice'])
+    req = (f'<p class="sub"><span class="tag tag--fill">{L["required"]}</span></p>' + dl(p['author_required'], 'dl2--fill')) if p['author_required'] else ''
+    choice = f'<p class="sub"><span class="tag">{L["choice"]}</span></p>' + dl(p['author_choice'])
     ind = dl(p['individual'])
     day = ''.join(f'<li><time>{e(t)}</time><span>{e(w)}</span></li>' for t, w in p['day'])
-    food = sl(FOOD['items'])
-    toc = [(f'{k}-base', L['base']), (f'{k}-author', 'Авторская программа'), (f'{k}-ind', L['individual']), (f'{k}-day', p['day_title']), (f'{k}-food', 'Питание')]
+    toc = [(f'{k}-base', L['base']), (f'{k}-author', 'Авторская программа'), (f'{k}-ind', L['individual']), (f'{k}-day', p['day_title'])]
     toc_h = ''.join(f'<a href="#{a}" data-jump><b>0{i + 1}</b>{e(t)}</a>' for i, (a, t) in enumerate(toc))
     return f'''<dialog class="pm" id="m-{k}" data-k="{k}" aria-labelledby="t-{k}">
   <div class="pm__bar"><span><b>{e(p['title'])}</b> · {e(p['level'])}</span><button class="xbtn" type="button" data-close aria-label="Закрыть">{I('x')}</button></div>
@@ -526,7 +519,6 @@ def program_dialog(p, prev, nxt):
     <section class="dsec" id="{k}-author"><h3>{L['author']}</h3>{req}{choice}</section>
     <section class="dsec" id="{k}-ind"><div class="dsec__h"><h3>{L['individual']}</h3><span class="note">{L['individual_note']}</span></div>{ind}</section>
     <section class="dsec" id="{k}-day"><h3>{e(p['day_title'])}</h3><ol class="times">{day}</ol></section>
-    <section class="dsec" id="{k}-food"><h3>Питание</h3><div class="pm__food">{food}<span class="pm__foodph"><img src="assets/img/food.jpg" alt="Дети у шведского стола" loading="lazy"></span></div></section>
     <nav class="pn" aria-label="Другие программы">
       <a href="#m-{prev['key']}" data-open="m-{prev['key']}"><small>← {e(prev['level'])}</small><b>{e(prev['title'])}</b></a>
       <a href="#m-{nxt['key']}" data-open="m-{nxt['key']}"><small>{e(nxt['level'])} →</small><b>{e(nxt['title'])}</b></a>
@@ -633,7 +625,7 @@ def asset_v(path):
 
 def page():
     main = (intro() + news() + concept() + about() + act('morning') + programs() + food() + teachers() + safety()
-            + act('after') + extra() + transfer() + summer() + act('evening') + reviews() + admission() + faq() + gallery()
+            + act('after') + extra() + transfer() + summer() + act('evening') + reviews() + admission() + gallery()
             + night() + signup())
     n = len(PROGRAMS)
     dialogs = ''.join(program_dialog(p, PROGRAMS[(i - 1) % n], PROGRAMS[(i + 1) % n]) for i, p in enumerate(PROGRAMS))
