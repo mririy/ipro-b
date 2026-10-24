@@ -267,7 +267,7 @@
 
   /* ---------------- трансфер: автобус едет по маршруту ---------------- */
   var route = $('[data-route]'), rPath = route && $('.route__line', route), rDone = route && $('.route__done', route), rBus = route && $('.route__bus', route), rSvg = route && $('svg', route);
-  var rLen = 0;
+  var rLen = 0, stopW = -1, stopLen = 0;
   if (rPath) { rLen = rPath.getTotalLength(); rDone.setAttribute('pathLength', '1'); rDone.style.strokeDasharray = '1 1'; }
   function updRoute() {
     if (!rPath) return;
@@ -276,7 +276,12 @@
     var p = reduce ? 1 : clamp01((vh * 0.92 - r.top) / (vh * 0.62));
     rDone.style.strokeDashoffset = (1 - p).toFixed(4);
     var sr = rSvg.getBoundingClientRect(), sx = sr.width / 1000, sy = sr.height / 160;
-    var pb = p * 0.93, pt = rPath.getPointAtLength(rLen * pb), pt2 = rPath.getPointAtLength(Math.min(rLen, rLen * pb + 2));
+    if (stopW !== sr.width) {  /* автобус останавливается перед остановкой «Ай Про», не наезжая на неё */
+      stopW = sr.width; stopLen = rLen;
+      var end = rPath.getPointAtLength(rLen);
+      for (var k = rLen; k > 0; k -= rLen / 240) { var q = rPath.getPointAtLength(k); if (Math.hypot((end.x - q.x) * sx, (end.y - q.y) * sy) >= 62) { stopLen = k; break; } }
+    }
+    var pt = rPath.getPointAtLength(stopLen * p), pt2 = rPath.getPointAtLength(Math.min(rLen, stopLen * p + 2));
     var x = (sr.left - r.left) + pt.x * sx, y = (sr.top - r.top) + pt.y * sy;
     var ang = Math.atan2((pt2.y - pt.y) * sy, (pt2.x - pt.x) * sx) * 180 / Math.PI;
     rBus.style.setProperty('--bx', x.toFixed(1) + 'px');
@@ -309,7 +314,7 @@
   function openD(id) {
     var dl = d.getElementById(id);
     if (!dl || dl.tagName !== 'DIALOG') return;
-    $$('dialog[open]').forEach(function (x) { if (x !== dl) closeD(x, true); });
+    if (id !== 'lightbox') $$('dialog[open]').forEach(function (x) { if (x !== dl) closeD(x, true); });
     if (!dl.open) { if (dl.showModal) dl.showModal(); else dl.setAttribute('open', ''); }
     if (dl.classList.contains('pm')) { dl.scrollTop = 0; try { history.replaceState(null, '', '#' + id); } catch (e) {} }
     root.classList.add('modal-open');
@@ -334,7 +339,7 @@
   });
   chapBtn.addEventListener('click', function () { openD('menu'); });
   d.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-open],[data-close],[data-close-go],[data-go],[data-jump],[data-gallery]');
+    var t = e.target.closest('[data-open],[data-close],[data-close-go],[data-go],[data-jump],[data-album]');
     if (!t) return;
     if (t.hasAttribute('data-open')) { e.preventDefault(); openD(t.getAttribute('data-open')); return; }
     if (t.hasAttribute('data-jump')) {
@@ -343,7 +348,7 @@
       if (tg) tg.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
       return;
     }
-    if (t.hasAttribute('data-gallery')) { e.preventDefault(); closeD(anyOpen()); setTab(t.getAttribute('data-gallery')); go('gallery'); return; }
+    if (t.hasAttribute('data-album')) { e.preventDefault(); openAlbum(t.getAttribute('data-album')); return; }
     var target = t.getAttribute('data-go') || t.getAttribute('data-close-go');
     if (t.hasAttribute('data-close')) {
       e.preventDefault();
@@ -366,37 +371,58 @@
   openFromHash();
   addEventListener('hashchange', openFromHash);
 
-  /* ---------------- галерея ---------------- */
-  var galItems = $$('.gal__it'), lbIndex = 0, lbList = [];
-  function setTab(cat) {
-    $$('.tabs button').forEach(function (b) { var on = b.dataset.cat === cat; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
-    galItems.forEach(function (it) { it.hidden = !(cat === 'all' || it.dataset.cat === cat); });
+  /* ---------------- альбомы: разделы галереи и направления кружков ---------------- */
+  var escH = function (v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var ALB = {}, albKey = null, lbIndex = 0, lbList = [];
+  try { ALB = JSON.parse($('#albumData').textContent); } catch (e) {}
+  var playIco = ($('#albumPlay') || {}).innerHTML || '';
+  function renderAlbum(k) {
+    var a = ALB[k]; if (!a) return false;
+    albKey = k;
+    $('#albumT').textContent = a.t;
+    var sub = $('#albumSub'); sub.textContent = a.sub || ''; sub.hidden = !a.sub;
+    $('#albumTabs').innerHTML = Object.keys(ALB).filter(function (x) { return ALB[x].g === a.g; }).map(function (x) {
+      var on = x === k;
+      return '<button type="button" data-album-tab="' + x + '" aria-pressed="' + on + '"' + (on ? ' class="is-on"' : '') + '>' + escH(ALB[x].t) + '<small>' + ALB[x].items.length + '</small></button>';
+    }).join('');
+    $('#albumGrid').innerHTML = a.items.map(function (it, i) {
+      return '<button type="button" class="album__it" data-i="' + i + '" aria-label="' + escH(it.alt) + '"><img src="' + escH(it.th) + '" alt="" loading="lazy">' + (it.k === 'v' ? '<span class="album__play">' + playIco + '</span>' : '') + '</button>';
+    }).join('');
+    $('#album').scrollTop = 0;
+    showTab();
+    return true;
   }
-  $$('.tabs button').forEach(function (b) { b.addEventListener('click', function () { setTab(b.dataset.cat); }); });
+  function showTab() {  /* активный раздел виден в ленте вкладок */
+    var tabs = $('#albumTabs'), tab = $('#albumTabs .is-on');
+    if (tab && tabs.clientWidth) tabs.scrollLeft = Math.max(0, tab.offsetLeft - (tabs.clientWidth - tab.offsetWidth) / 2);
+  }
+  function openAlbum(k) { if (renderAlbum(k)) { openD('album'); showTab(); } }
+  (function () {
+    var dlg = $('#album'); if (!dlg) return;
+    dlg.addEventListener('click', function (e) {
+      var tb = e.target.closest('[data-album-tab]');
+      if (tb) { renderAlbum(tb.getAttribute('data-album-tab')); return; }
+      var it = e.target.closest('.album__it');
+      if (it) { lbList = ALB[albKey].items; openD('lightbox'); lbShow(+it.dataset.i); }
+    });
+  })();
   function lbShow(i) {
-    lbList = galItems.filter(function (it) { return !it.hidden; });
     if (!lbList.length) return;
     lbIndex = (i + lbList.length) % lbList.length;
     var it = lbList[lbIndex], stage = $('#lbStage');
     stage.innerHTML = '';
     var m;
-    if (it.dataset.kind === 'video') {
+    if (it.k === 'v') {
       m = d.createElement('video');
-      m.src = it.dataset.full; m.poster = it.dataset.poster; m.controls = true; m.playsInline = true; m.loop = true; m.autoplay = true;
-      m.setAttribute('aria-label', it.dataset.alt);
+      m.src = it.full; m.poster = it.th; m.controls = true; m.playsInline = true; m.loop = true; m.autoplay = true; m.muted = true;
+      m.setAttribute('aria-label', it.alt);
     } else {
-      m = d.createElement('img'); m.src = it.dataset.full; m.alt = it.dataset.alt;
+      m = d.createElement('img'); m.src = it.full; m.alt = it.alt;
     }
     stage.appendChild(m);
-    $('#lbCap').textContent = it.dataset.alt + '  ·  ' + (lbIndex + 1) + ' из ' + lbList.length;
+    $('#lbCap').textContent = it.alt + '  ·  ' + (lbIndex + 1) + ' из ' + lbList.length;
     if (m.tagName === 'VIDEO') tryPlay(m);
   }
-  galItems.forEach(function (it) {
-    it.addEventListener('click', function () {
-      var vis = galItems.filter(function (x) { return !x.hidden; });
-      openD('lightbox'); lbShow(vis.indexOf(it));
-    });
-  });
   $$('[data-lb]').forEach(function (b) { b.addEventListener('click', function () { lbShow(lbIndex + (+b.dataset.lb)); }); });
   addEventListener('keydown', function (e) {
     var lb = $('#lightbox');
@@ -404,6 +430,17 @@
     if (e.key === 'ArrowRight') lbShow(lbIndex + 1);
     if (e.key === 'ArrowLeft') lbShow(lbIndex - 1);
   });
+  /* свайп в лайтбоксе на телефоне */
+  (function () {
+    var lb = $('#lightbox'); if (!lb) return;
+    var x0 = null, y0 = 0;
+    lb.addEventListener('touchstart', function (e) { var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; }, { passive: true });
+    lb.addEventListener('touchend', function (e) {
+      if (x0 === null) return;
+      var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) lbShow(lbIndex + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+  })();
 
   /* ---------------- отзывы: листание ---------------- */
   $$('.carousel').forEach(function (c) {
@@ -420,7 +457,7 @@
   (function () {
     var list = $('#newsList'), sec = $('#news');
     if (!list) return;
-    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var esc = escH;
     var arrow = '<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg>';
     var fmtDate = function (s) {
       var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');

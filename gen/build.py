@@ -47,6 +47,18 @@ def h2(title, em='', cls='h2'):
     return f'<h2 class="{cls}" data-split>{t}</h2>'
 
 
+def ft(items, cls=''):
+    """Плитки-факты: иконка, жирная короткая строка, пояснение мелко."""
+    lis = ''.join(f'<li class="rv">{I(ic, "sq")}<b>{e(b)}</b>{("<span>" + e(d) + "</span>") if d else ""}</li>' for ic, b, d in items)
+    return f'<ul class="ft{(" " + cls) if cls else ""}">{lis}</ul>'
+
+
+def more(label='Подробнее', tag='span', attrs='', cls=''):
+    """Явная подпись у всего, что открывается: «Подробнее →»."""
+    t = ' type="button"' if tag == 'button' else ''
+    return f'<{tag} class="more{(" " + cls) if cls else ""}"{t}{attrs}>{e(label)}{I("arrow-right")}</{tag}>'
+
+
 def aud(p):
     return f"{p['audience']}, {p['ages']}" if p['audience'] else p['ages']
 
@@ -60,7 +72,7 @@ def video(name, cls='', label='', autoplay=False, poster=None):
 
 # короткие подписи главы в капсуле на телефоне (полная не помещается)
 SHORT = {'news': 'Новости', 'act-morning': 'Утро', 'programs': 'Программы', 'act-after': 'После уроков',
-         'extra': 'Кружки', 'act-evening': 'Вечер', 'faq': 'Вопросы', 'act-night': 'Ночь', 'signup': 'Запись'}
+         'extra': 'Кружки', 'act-evening': 'Отзывы', 'faq': 'Вопросы', 'act-night': 'Ночь', 'signup': 'Запись'}
 
 
 def section(id_, pal, title, num, body, cls='', extra=''):
@@ -139,7 +151,7 @@ def news():
     data = json.dumps(NEWS_SEED, ensure_ascii=False)
     body = f'''  <div class="wrap news">
     <div class="news__head">{kicker('', 'Актуально')}<h2 class="h3">Новости и объявления</h2></div>
-    <div class="news__list" id="newsList">{cards}</div>
+    <div class="news__list hs" id="newsList">{cards}</div>
   </div>
   <script type="application/json" id="newsSeed">{data}</script>'''
     return section('news', 'morning', 'Новости и объявления', '', body, 'sc--auto')
@@ -158,10 +170,7 @@ def concept():
     stats = ''.join(
         f'<div class="stat rv"><b{" data-count=" + chr(34) + re.sub(r"[^0-9]", "", n) + chr(34) if cnt else ""}>{e(n)}</b><span>{e(l)}</span></div>'
         for n, l, cnt in c['stats'])
-    groups = ''
-    for gi, (title, items) in enumerate(c['groups']):
-        lis = ''.join(f'<li>{I(ic, "sq")}<span>{e(t)}</span></li>' for ic, t in items)
-        groups += f'<article class="group rv"><h3 class="h3">{e(title)}</h3><ul class="ilist">{lis}</ul></article>'
+    groups = ''.join(f'<div class="feat__g"><h3 class="feat__t">{e(title)}</h3>{ft(items)}</div>' for title, items in c['groups'])
     body = f'''  <div class="wrap">
     <div class="split">
       <div class="sh">{kicker('01', 'Концепция')}{h2(c['title'], c['title_em'])}<p class="lead rv">{e(c['lead'])}</p></div>
@@ -172,7 +181,7 @@ def concept():
       </div>
     </div>
     <div class="stats">{stats}</div>
-    <div class="groups">{groups}</div>
+    <div class="feat">{groups}</div>
   </div>'''
     return section('concept', 'morning', 'Концепция', '01', body)
 
@@ -196,7 +205,6 @@ def about():
       <blockquote>{e(a['quote'])}</blockquote>
       <p class="director__sign">{e(a['sign'])}</p>
     </div>
-    <div class="ph-card rv"><span>{I('play')}</span><p><b>Видео: администрация и дети</b>Здесь будет видео-знакомство со школой — разместим, когда школа его снимет.</p></div>
   </div>'''
     return section('about', 'mist', 'О школе', '02', body, 'sc--seq')
 
@@ -208,25 +216,27 @@ def sun_arc(pos, moon=False):
 
 def act(key, cls=''):
     a = ACTS[key]
+    top = f'<div class="act__top">{sun_arc(a["sun"])}<p class="act__time">{e(a["time"])}</p></div>\n    ' if a['time'] else ''
     body = f'''  <div class="act__plate" style="background-image:url(assets/img/plates/{a['plate']}.jpg)" aria-hidden="true"></div>
   <div class="wrap act__in">
     <span class="act__num" aria-hidden="true">{a['num']}</span>
-    <div class="act__top">{sun_arc(a['sun'])}<p class="act__time">{e(a['time'])}</p></div>
-    <h2 class="act__name" data-split>{e(a['name'])}</h2>
+    {top}<h2 class="act__name" data-split>{e(a['name'])}</h2>
     <p class="act__note rv">{e(a['note'])}</p>
   </div>'''
-    pal = {'morning': 'sky', 'after': 'amber', 'evening': 'dusk'}[key]
-    return section(f'act-{key}', pal, f"{a['time']} · {a['name']}", '', body, 'act ' + cls)
+    pal = {'morning': 'sky', 'after': 'amber', 'evening': 'twilight'}[key]
+    title = f"{a['time']} · {a['name']}" if a['time'] else a['name']
+    return section(f'act-{key}', pal, title, '', body, 'act ' + cls)
 
 
 def programs():
     P = PROGRAMS_INTRO
     tiles = ''
     for p in PROGRAMS:
-        tiles += f'''<a class="tile rv" data-k="{p['key']}" href="#m-{p['key']}" data-open="m-{p['key']}">
-      <div class="tile__top"><span class="tile__lvl">{e(p['level'])}</span><span class="tile__go">{I('arrow-right')}</span></div>
-      <span class="tile__photo"><img src="assets/img/{p['img']}.jpg" alt="{e(p['alt'])}" loading="lazy"></span>
+        tiles += f'''<a class="tile rv" data-k="{p['key']}" href="#m-{p['key']}" data-open="m-{p['key']}" aria-label="{e(p['title'])}, {e(aud(p))}: подробнее о программе">
+      <span class="tile__lvl">{e(p['level'])}</span>
+      <span class="tile__photo"><img src="assets/img/{p['img']}.jpg" alt="" loading="lazy"></span>
       <div class="tile__txt"><h3>{e(p['title'])}</h3><p>{e(aud(p))}</p></div>
+      {more()}
     </a>'''
     body = f'''  <div class="wrap">
     <div class="sh">{kicker('03', 'Программы')}{h2(P['title'], P['title_em'])}<p class="lead rv">{e(P['lead'])}</p></div>
@@ -237,10 +247,9 @@ def programs():
 
 def food():
     f = FOOD
-    items = ''.join(f'<li class="rv"><span>0{i + 1}</span>{e(t)}</li>' for i, t in enumerate(f['items']))
     body = f'''  <div class="wrap">
     <div class="split split--food">
-      <div class="sh">{kicker('04', 'Питание')}{h2('Своя кухня и', 'питание 4 раза в день')}<p class="lead rv">{e(f['lead'])}</p><ol class="nlist">{items}</ol></div>
+      <div class="sh">{kicker('04', 'Питание')}{h2(f['title'], f['title_em'])}<p class="lead rv">{e(f['lead'])}</p>{ft(f['items'], 'ft--2')}</div>
       <figure class="frame frame--tilt rv" data-par="-0.04"><img src="assets/img/food.jpg" alt="Дети выбирают еду на шведском столе" loading="lazy"></figure>
     </div>
   </div>'''
@@ -266,12 +275,11 @@ def teachers():
 
 def safety():
     s = SAFETY
-    items = ''.join(f'<li class="rv">{I(ic, "sq")}<span>{e(t)}</span></li>' for ic, t in s['items'])
     body = f'''  <div class="wrap">
     <div class="sh">{kicker('06', 'Безопасность')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
     <div class="split split--safety">
       <figure class="frame rv">{video('terr_walk', '', 'Прогулка по территории школы: башня с воротами, парковые дорожки, детская площадка')}<figcaption class="badge"><b>{e(s['area'][0])}</b>{e(s['area'][1])}</figcaption></figure>
-      <ul class="glist">{items}</ul>
+      {ft(s['items'], 'ft--2')}
     </div>
   </div>'''
     return section('safety', 'deep', 'Безопасность', '06', body)
@@ -280,18 +288,16 @@ def safety():
 def extra():
     x = EXTRA
     dirs = ''
-    for name, ic, chips, media in x['directions']:
-        chips_h = ''.join(f'<span>{e(c)}</span>' for c in chips)
-        cards = ''
-        for kind, src, cap, alt in media:
-            if kind == 'img':
-                m = f'<img src="assets/img/{src}.jpg" alt="{e(alt)}" loading="lazy">'
-            else:
-                m = video(src, '', alt)
-            cards += f'<figure class="reel__card">{m}<figcaption>{e(cap)}</figcaption></figure>'
-        dirs += f'''<article class="dir rv">
-      <div class="dir__head">{I(ic, 'sq')}<h3 class="h3">{e(name)}</h3><div class="chips">{chips_h}</div></div>
-      <div class="reel" tabindex="0" aria-label="{e(name)}: фото и видео">{cards}</div>
+    for dr in x['directions']:
+        n = len(dr['media'])
+        lst = ''.join(f'<li>{e(t)}</li>' for t in dr['list'])
+        dirs += f'''<article class="dirc rv">
+      <button type="button" class="dirc__ph" data-album="{dr['key']}" aria-label="{e(dr['name'])}: фото и видео"><img src="assets/img/{dr['cover']}.jpg" alt="" loading="lazy"><span class="dirc__n">{I('images')}{n}</span></button>
+      <div class="dirc__txt">
+        <h3 class="dirc__t">{I(dr['icon'], 'sq')}{e(dr['name'])}</h3>
+        <ul class="dirc__list">{lst}</ul>
+        {more('Фото и видео', 'button', f' data-album="{dr["key"]}"')}
+      </div>
     </article>'''
     guests = ''.join(f'<article class="guest rv"><span class="guest__mono" aria-hidden="true">{e(n[0])}</span><div><b>{e(n)}</b><span class="guest__what">{e(w)}</span><p>{e(c)}</p></div></article>' for n, w, c in x['guests'])
     body = f'''  <div class="wrap">
@@ -307,11 +313,10 @@ def extra():
 
 def transfer():
     t = TRANSFER
-    items = ''.join(f'<li class="rv">{I(ic, "sq")}<span>{e(tx)}</span></li>' for ic, tx in t['items'])
     (i1, n1, s1), (i2, n2, s2) = t['route']
     body = f'''  <div class="wrap">
     <div class="split split--transfer">
-      <div class="sh">{kicker('08', 'Трансфер')}{h2(t['title'], t['title_em'])}<p class="lead rv">{e(t['lead'])}</p><ul class="glist glist--light">{items}</ul></div>
+      <div class="sh">{kicker('08', 'Трансфер')}{h2(t['title'], t['title_em'])}<p class="lead rv">{e(t['lead'])}</p>{ft(t['items'], 'ft--row')}</div>
       <figure class="frame frame--tilt rv"><img src="assets/img/bus.jpg" alt="Микроавтобус школьного трансфера на дорожке у парка" loading="lazy"></figure>
     </div>
     <div class="route rv" data-route aria-hidden="true">
@@ -326,16 +331,16 @@ def transfer():
 
 def summer():
     s = SUMMER
-    facts = ''.join(f'<li>{I(ic)}{e(t)}</li>' for ic, t in s['facts'])
     eps = ''.join(f'''<article class="ep rv"><span class="ep__ph"><img src="assets/img/{img}.jpg" alt="{e(alt)}" loading="lazy"></span>
-      <div class="ep__txt"><p class="ep__k">Эпизод {n} · {e(mon)}</p><h3>{e(title)}</h3><p>{text}</p></div></article>''' for n, mon, title, text, img, alt in s['episodes'])
+      <div class="ep__txt"><p class="ep__k">{e(mon)}</p><h3>{e(title)}</h3><p>{text}</p></div></article>''' for n, mon, title, text, img, alt in s['episodes'])
     body = f'''  <div class="wrap">
     <div class="split split--summer">
-      <div class="sh">{kicker('09', 'Летний клуб')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p><ul class="facts rv">{facts}</ul></div>
+      <div class="sh">{kicker('09', 'Летний клуб')}{h2(s['title'], s['title_em'])}<p class="lead rv">{e(s['lead'])}</p></div>
       <figure class="frame frame--round rv">{video('summer_yard', '', 'Летний клуб во дворе школы: рисунки мелками и танцы')}</figure>
     </div>
+    {ft(s['facts'], 'ft--3')}
     <div class="eps">{eps}</div>
-    <a class="pill pill--navy summer__more rv" href="#gallery" data-gallery="summer">Смотреть больше фото {I('arrow-right')}</a>
+    {more('Смотреть фото и видео лета', 'button', ' data-album="summer"', 'more--pill rv')}
   </div>'''
     return section('summer', 'sun', 'Летний клуб', '09', body)
 
@@ -344,12 +349,13 @@ def reviews():
     r = REVIEWS
     cards = ''.join(f'<figure class="review"><span class="review__mk">{I("quote")}</span><blockquote>{q}</blockquote><figcaption><b>{e(n)}</b><span>{e(src)}</span></figcaption></figure>' for q, n, src in r['items'])
     stars = ''.join(I('star', 'st') for _ in range(5))
+    lead = f'<p class="lead rv">{e(r["lead"])}</p>' if r.get('lead') else ''
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('10', 'Отзывы')}{h2(r['title'], r['title_em'])}<p class="lead rv">{e(r['lead'])}</p></div>
-    <a class="rating rv" href="{CONTACTS['map']}" target="_blank" rel="noopener"><b>{r['rating']}</b><span class="rating__st">{stars}</span><span>из 5 на Яндекс Картах{I('arrow-up-right')}</span></a>
+    <div class="sh">{kicker('10', 'Отзывы')}{h2(r['title'], r['title_em'])}{lead}</div>
+    <a class="rating rv" href="{CONTACTS['map']}" target="_blank" rel="noopener"><b>{r['rating']}</b><span class="rating__st">{stars}</span><span class="rating__t">из 5 на Яндекс Картах<span class="more">Все отзывы{I('arrow-up-right')}</span></span></a>
     <div class="carousel rv">
-      <div class="carousel__track" tabindex="0" aria-label="Отзывы родителей">{cards}</div>
-      <div class="carousel__nav"><button type="button" data-dir="-1" aria-label="Предыдущий отзыв">{I('arrow-left')}</button><button type="button" data-dir="1" aria-label="Следующий отзыв">{I('arrow-right')}</button></div>
+      <div class="carousel__track hs" tabindex="0" aria-label="Отзывы родителей">{cards}</div>
+      <div class="carousel__nav"><button type="button" data-dir="-1" aria-label="Предыдущий отзыв">{I('arrow-left')}</button><button type="button" data-dir="1" aria-label="Следующий отзыв">{I('arrow-right')}</button><span class="carousel__hint">Листайте отзывы</span></div>
     </div>
   </div>'''
     return section('reviews', 'twilight', 'Отзывы', '10', body)
@@ -357,20 +363,18 @@ def reviews():
 
 def admission():
     a = ADMISSION
-    cards = ''.join(f'<article class="card rv">{I(ic, "sq")}<h3>{e(t)}</h3><p>{e(s)}</p></article>' for ic, t, s in a['cards'])
-    inc = ''.join(f'<li>{I("check")}{e(t)}</li>' for t in a['included'])
-    docs = ''.join(f'<li>{I(ic, "sq")}<span><b>{e(t)}</b>{e(s)}</span></li>' for ic, t, s in a['docs'])
+    keys = ft(a['cards'], 'ft--big')
+    inc = ft([(ic, t, '') for ic, t in a['included']], 'ft--row ft--4')
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('11', 'Поступление')}{h2(a['title'], a['title_em'])}<p class="lead rv">{e(a['lead'])}</p></div>
-    <div class="adm">
-      <div class="adm__col">{cards}
-        <article class="card card--cost rv"><p class="label">Стоимость</p><h3>{e(a['cost'][0])}</h3><p>{e(a['cost'][1])}</p><a class="pill pill--sun" href="#signup">Прийти на пробные дни {I('arrow-right')}</a></article>
-      </div>
-      <article class="card card--inc rv"><p class="label">Что входит в стоимость</p><ul class="checks">{inc}</ul></article>
+    <div class="sh">{kicker('11', 'Поступление')}{h2(a['title'], a['title_em'])}</div>
+    {keys}
+    <div class="inc">
+      <h3 class="feat__t">Что входит в стоимость</h3>
+      {inc}
     </div>
-    <div class="docs rv">
-      <div class="docs__head"><p class="label">Лицензия и документы</p><a class="docs__link" href="#docs" data-open="docs">Сведения об образовательной организации {I('arrow-up-right')}</a></div>
-      <ul class="docs__list">{docs}</ul>
+    <div class="adm__cta rv">
+      <a class="pill pill--sun" href="#signup">Прийти на пробные дни {I('arrow-right')}</a>
+      <a class="doclink" href="#docs" data-open="docs">{I('file-badge', 'sq')}<span><b>Лицензия и документы</b><small>госаккредитация, холдинг Mirapolis</small></span>{more()}</a>
     </div>
   </div>'''
     return section('admission', 'evening', 'Поступление', '11', body)
@@ -380,7 +384,7 @@ def faq():
     items = ''.join(f'<details class="qa"{" open" if i == 0 else ""}><summary>{e(q)}<span class="qa__pm" aria-hidden="true">{I("plus")}</span></summary><p>{a}</p></details>' for i, (q, a) in enumerate(FAQ))
     body = f'''  <div class="wrap">
     <div class="split split--faq">
-      <div class="sh">{kicker('', 'Вопросы и ответы')}{h2('Отвечаем на главные вопросы', 'родителей')}<p class="lead rv">Коротко о главном перед записью на пробные дни.</p>
+      <div class="sh">{kicker('', 'Вопросы и ответы')}{h2('Отвечаем на главные вопросы', 'родителей')}
         <button class="pill pill--white faq__ask" type="button" data-open="helper">{I('message-circle-question-mark')} Спросить помощника</button></div>
       <div class="qas rv">{items}</div>
     </div>
@@ -388,18 +392,22 @@ def faq():
     return section('faq', 'evening', 'Вопросы и ответы', '', body)
 
 
+def plural_media(n):
+    return f'{n} фото и видео'
+
+
 def gallery():
-    tabs = '<button type="button" class="is-on" data-cat="all" aria-pressed="true">Все</button>' + ''.join(f'<button type="button" data-cat="{k}" aria-pressed="false">{e(l)}</button>' for k, l in GALLERY_TABS)
-    items = ''
-    for i, (cat, kind, src, alt) in enumerate(GALLERY):
-        thumb = f'assets/img/posters/{src}.jpg' if kind == 'video' else f'assets/img/{src}.jpg'
-        full = f'assets/video/{src}.mp4' if kind == 'video' else thumb
-        badge = f'<span class="gal__play">{I("play")}</span>' if kind == 'video' else ''
-        items += f'<button type="button" class="gal__it" data-cat="{cat}" data-kind="{kind}" data-full="{full}" data-poster="{thumb}" data-alt="{e(alt)}"><img src="{thumb}" alt="{e(alt)}" loading="lazy">{badge}</button>'
+    cards = ''
+    for k, label in GALLERY_TABS:
+        n = sum(1 for g in GALLERY if g[0] == k)
+        cards += f'''<button type="button" class="alb rv" data-album="{k}">
+      <span class="alb__ph"><img src="assets/img/{GALLERY_COVERS[k]}.jpg" alt="" loading="lazy"></span>
+      <span class="alb__txt"><b>{e(label)}</b><small>{plural_media(n)}</small></span>
+      {more('Смотреть')}
+    </button>'''
     body = f'''  <div class="wrap">
-    <div class="sh">{kicker('', 'Галерея')}{h2('Фото и видео', 'школы')}<p class="lead rv">Живой архив наших будней: уроки, кружки, территория, лето и праздники.</p></div>
-    <div class="tabs rv" role="group" aria-label="Темы галереи">{tabs}</div>
-    <div class="gal" id="galGrid">{items}</div>
+    <div class="sh">{kicker('', 'Галерея')}{h2('Фото и видео', 'школы')}</div>
+    <div class="albs">{cards}</div>
   </div>'''
     return section('gallery', 'evening2', 'Галерея', '', body)
 
@@ -490,12 +498,13 @@ def footer():
 def program_dialog(p, prev, nxt):
     k = p['key']
     L = LABELS
-    base = ''.join(f'<li class="{"hl" if len(b) > 2 and b[2] else ""}">{I("sparkles" if len(b) > 2 and b[2] else "book-open-check")}<span><b>{e(b[0])}</b>{("<small>" + e(b[1]) + "</small>") if len(b) > 1 and b[1] else ""}</span></li>' for b in p['base'])
-    req = (f'<p class="sub">{L["required"]}</p><div class="chips chips--fill">' + ''.join(f'<span>{e(x)}</span>' for x in p['author_required']) + '</div>') if p['author_required'] else ''
-    choice = f'<p class="sub">{L["choice"]}</p><div class="chips">' + ''.join(f'<span>{e(x)}</span>' for x in p['author_choice']) + '</div>'
-    ind = '<div class="chips">' + ''.join(f'<span>{e(x)}</span>' for x in p['individual']) + '</div>'
+    base = ''.join(f'<li class="{"hl" if len(b) > 2 and b[2] else ""}">{I("sparkles" if len(b) > 2 and b[2] else "check")}<span><b>{e(b[0])}</b>{("<small>" + e(b[1]) + "</small>") if len(b) > 1 and b[1] else ""}</span></li>' for b in p['base'])
+    dl = lambda xs, cls='': f'<ul class="dl2{(" " + cls) if cls else ""}">' + ''.join(f'<li>{e(x)}</li>' for x in xs) + '</ul>'
+    req = (f'<p class="sub"><span class="tag tag--fill">{L["required"]}</span>входит в расписание</p>' + dl(p['author_required'], 'dl2--fill')) if p['author_required'] else ''
+    choice = f'<p class="sub"><span class="tag">{L["choice"]}</span>по желанию</p>' + dl(p['author_choice'])
+    ind = dl(p['individual'])
     day = ''.join(f'<li><time>{e(t)}</time><span>{e(w)}</span></li>' for t, w in p['day'])
-    food = ''.join(f'<li>{I(ic, "sq")}<b>{e(t)}</b></li>' for ic, t in zip(['clock', 'utensils', 'salad', 'heart-handshake'], FOOD['items']))
+    food = ft(FOOD['items'], 'ft--2 ft--light')
     toc = [(f'{k}-base', L['base']), (f'{k}-author', 'Авторская программа'), (f'{k}-ind', L['individual']), (f'{k}-day', p['day_title']), (f'{k}-food', 'Питание')]
     toc_h = ''.join(f'<a href="#{a}" data-jump><b>0{i + 1}</b>{e(t)}</a>' for i, (a, t) in enumerate(toc))
     return f'''<dialog class="pm" id="m-{k}" data-k="{k}" aria-labelledby="t-{k}">
@@ -512,7 +521,7 @@ def program_dialog(p, prev, nxt):
     <section class="dsec" id="{k}-author"><h3>{L['author']}</h3>{req}{choice}</section>
     <section class="dsec" id="{k}-ind"><div class="dsec__h"><h3>{L['individual']}</h3><span class="note">{L['individual_note']}</span></div>{ind}</section>
     <section class="dsec" id="{k}-day"><h3>{e(p['day_title'])}</h3><ol class="times">{day}</ol></section>
-    <section class="dsec" id="{k}-food"><h3>Питание</h3><div class="pm__food"><ul class="food4">{food}</ul><span class="pm__foodph"><img src="assets/img/food.jpg" alt="Дети у шведского стола" loading="lazy"></span></div></section>
+    <section class="dsec" id="{k}-food"><h3>Питание</h3><div class="pm__food">{food}<span class="pm__foodph"><img src="assets/img/food.jpg" alt="Дети у шведского стола" loading="lazy"></span></div></section>
     <nav class="pn" aria-label="Другие программы">
       <a href="#m-{prev['key']}" data-open="m-{prev['key']}"><small>← {e(prev['level'])}</small><b>{e(prev['title'])}</b></a>
       <a href="#m-{nxt['key']}" data-open="m-{nxt['key']}"><small>{e(nxt['level'])} →</small><b>{e(nxt['title'])}</b></a>
@@ -541,6 +550,32 @@ def docs_dialog():
     <p class="label">Реквизиты и документы</p>
     <p class="ph">Полное наименование, ИНН, ОГРН, сканы лицензии и уставных документов разместим здесь по данным школы.</p>
   </div>
+</dialog>
+'''
+
+
+def media_item(kind, src, alt):
+    if kind == 'video':
+        return {'k': 'v', 'full': f'assets/video/{src}.mp4', 'th': f'assets/img/posters/{src}.jpg', 'alt': alt}
+    return {'k': 'i', 'full': f'assets/img/{src}.jpg', 'th': f'assets/img/{src}.jpg', 'alt': alt}
+
+
+def album_dialog():
+    data = {}
+    for k, label in GALLERY_TABS:
+        data[k] = {'t': label, 'g': 'gal', 'items': [media_item(kind, src, alt) for cat, kind, src, alt in GALLERY if cat == k]}
+    for dr in EXTRA['directions']:
+        data[dr['key']] = {'t': dr['name'], 'g': 'dir', 'sub': ' · '.join(dr['list']), 'items': [media_item(kind, src, alt) for kind, src, alt in dr['media']]}
+    js = json.dumps(data, ensure_ascii=False)
+    return f'''<dialog class="album" id="album" aria-labelledby="albumT">
+  <div class="album__bar"><h2 id="albumT">Фото и видео</h2><button class="xbtn" type="button" data-close aria-label="Закрыть">{I('x')}</button></div>
+  <div class="album__body">
+    <nav class="album__tabs" id="albumTabs" aria-label="Разделы"></nav>
+    <p class="album__sub" id="albumSub" hidden></p>
+    <div class="album__grid" id="albumGrid"></div>
+  </div>
+  <template id="albumPlay">{I('play')}</template>
+  <script type="application/json" id="albumData">{js}</script>
 </dialog>
 '''
 
@@ -597,7 +632,7 @@ def page():
             + night() + signup())
     n = len(PROGRAMS)
     dialogs = ''.join(program_dialog(p, PROGRAMS[(i - 1) % n], PROGRAMS[(i + 1) % n]) for i, p in enumerate(PROGRAMS))
-    dialogs += menu_dialog() + docs_dialog() + lightbox() + helper_dialog()
+    dialogs += menu_dialog() + docs_dialog() + album_dialog() + lightbox() + helper_dialog()
     head_dock = dock()
     desc = 'Ай Про (IPROSCHOOL) — частная школа полного дня в Ялте для детей 4–18 лет: детский сад и школа в историческом особняке, малые группы до 14 человек, языки с носителями, кружки, питание и трансфер. Три пробных дня бесплатно.'
     return f'''<!doctype html>
